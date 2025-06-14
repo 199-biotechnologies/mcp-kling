@@ -113,7 +113,7 @@ export default class KlingClient {
         else if (request.tts_text) {
             input.mode = 'text2video';
             input.text = request.tts_text;
-            input.voice_id = request.tts_voice || 'male-warm';
+            input.voice_id = request.tts_voice || 'male-magnetic';
             input.voice_language = 'en';
             input.voice_speed = request.tts_speed || 1.0;
         }
