@@ -11,3 +11,6 @@ node_modules/
 claude_desktop_config.json
 *.log
 .DS_Store
+test*
+*.test.*
+*.spec.*
