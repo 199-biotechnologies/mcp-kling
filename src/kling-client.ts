@@ -35,6 +35,67 @@ export interface TaskStatus {
   };
 }
 
+export interface VideoExtensionRequest {
+  task_id: string;
+  prompt: string;
+  model_name?: 'kling-v1' | 'kling-v1.5' | 'kling-v1.6';
+  duration?: '5';
+  mode?: 'standard' | 'professional';
+}
+
+export interface LipsyncRequest {
+  video_url: string;
+  audio_url?: string;
+  tts_text?: string;
+  tts_voice?: string;
+  tts_speed?: number;
+  model_name?: 'kling-v1' | 'kling-v1.5';
+}
+
+export interface VideoEffectsRequest {
+  image_urls: string[];
+  effect_scene: 'hug' | 'kiss' | 'heart_gesture' | 'squish' | 'expansion' | 'fuzzyfuzzy' | 'bloombloom' | 'dizzydizzy';
+  duration?: '5' | '10';
+  model_name?: 'kling-v1' | 'kling-v1.5' | 'kling-v1.6';
+}
+
+export interface ImageGenerationRequest {
+  prompt: string;
+  negative_prompt?: string;
+  model_name?: 'kling-v1' | 'kling-v1.5' | 'kling-v2';
+  aspect_ratio?: '16:9' | '9:16' | '1:1' | '4:3' | '3:4' | '2:3' | '3:2';
+  num_images?: number;
+  ref_image_url?: string;
+  ref_image_weight?: number;
+}
+
+export interface VirtualTryOnRequest {
+  person_image_url: string;
+  cloth_image_urls: string[];
+  model_name?: 'kolors-virtual-try-on-v1' | 'kolors-virtual-try-on-v1.5';
+}
+
+export interface ResourcePackage {
+  resource_id: string;
+  name: string;
+  amount: number;
+  expire_at: string;
+  created_at: string;
+}
+
+export interface AccountBalance {
+  total_balance: number;
+  resource_packages: ResourcePackage[];
+}
+
+export interface TaskListParams {
+  page?: number;
+  page_size?: number;
+  status?: 'submitted' | 'processing' | 'succeed' | 'failed';
+  start_time?: string;
+  end_time?: string;
+}
+
 export default class KlingClient {
   private jwt: string;
   private axiosInstance: AxiosInstance;
@@ -122,6 +183,57 @@ export default class KlingClient {
     }
   }
 
+  async extendVideo(request: VideoExtensionRequest): Promise<{ task_id: string }> {
+    const path = '/v1/video/extension';
+    
+    const body = {
+      model_name: request.model_name || 'kling-v1',
+      task_id: request.task_id,
+      prompt: request.prompt,
+      duration: request.duration || '5',
+      mode: request.mode || 'standard',
+    };
+
+    try {
+      const response = await this.axiosInstance.post(path, body);
+      return response.data.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(`Kling API error: ${error.response?.data?.message || error.message}`);
+      }
+      throw error;
+    }
+  }
+
+  async createLipsync(request: LipsyncRequest): Promise<{ task_id: string }> {
+    const path = '/v1/video/lipsync';
+    
+    const body: any = {
+      model_name: request.model_name || 'kling-v1',
+      video_url: request.video_url,
+    };
+
+    if (request.audio_url) {
+      body.audio_url = request.audio_url;
+    } else if (request.tts_text) {
+      body.tts_text = request.tts_text;
+      body.tts_voice = request.tts_voice || 'male-warm';
+      body.tts_speed = request.tts_speed || 1.0;
+    } else {
+      throw new Error('Either audio_url or tts_text must be provided');
+    }
+
+    try {
+      const response = await this.axiosInstance.post(path, body);
+      return response.data.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(`Kling API error: ${error.response?.data?.message || error.message}`);
+      }
+      throw error;
+    }
+  }
+
   async downloadVideo(videoUrl: string, downloadPath?: string): Promise<string> {
     const defaultPath = path.join(homedir(), 'Desktop');
     const downloadDir = downloadPath || defaultPath;
@@ -146,5 +258,154 @@ export default class KlingClient {
       writer.on('finish', () => resolve(filepath));
       writer.on('error', reject);
     });
+  }
+
+  async applyVideoEffect(request: VideoEffectsRequest): Promise<{ task_id: string }> {
+    const path = '/v1/video/effects';
+    
+    // Validate image count based on effect type
+    const dualCharacterEffects = ['hug', 'kiss', 'heart_gesture'];
+    const singleImageEffects = ['squish', 'expansion', 'fuzzyfuzzy', 'bloombloom', 'dizzydizzy'];
+    
+    if (dualCharacterEffects.includes(request.effect_scene) && request.image_urls.length !== 2) {
+      throw new Error(`Effect "${request.effect_scene}" requires exactly 2 images`);
+    }
+    
+    if (singleImageEffects.includes(request.effect_scene) && request.image_urls.length !== 1) {
+      throw new Error(`Effect "${request.effect_scene}" requires exactly 1 image`);
+    }
+    
+    const body = {
+      model_name: request.model_name || 'kling-v1.6',
+      image_urls: request.image_urls,
+      effect_scene: request.effect_scene,
+      duration: request.duration || '5',
+    };
+
+    try {
+      const response = await this.axiosInstance.post(path, body);
+      return response.data.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(`Kling API error: ${error.response?.data?.message || error.message}`);
+      }
+      throw error;
+    }
+  }
+
+  async generateImage(request: ImageGenerationRequest): Promise<{ task_id: string }> {
+    const path = '/v1/image/generation';
+    
+    const body = {
+      model_name: request.model_name || 'kling-v2',
+      prompt: request.prompt,
+      negative_prompt: request.negative_prompt || '',
+      aspect_ratio: request.aspect_ratio || '1:1',
+      num_images: request.num_images || 1,
+      ...(request.ref_image_url && { ref_image_url: request.ref_image_url }),
+      ...(request.ref_image_weight && { ref_image_weight: request.ref_image_weight }),
+    };
+
+    try {
+      const response = await this.axiosInstance.post(path, body);
+      return response.data.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(`Kling API error: ${error.response?.data?.message || error.message}`);
+      }
+      throw error;
+    }
+  }
+
+  async getImageTaskStatus(taskId: string): Promise<any> {
+    const path = `/v1/image/generation/${taskId}`;
+
+    try {
+      const response = await this.axiosInstance.get(path);
+      return response.data.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(`Kling API error: ${error.response?.data?.message || error.message}`);
+      }
+      throw error;
+    }
+  }
+
+  async virtualTryOn(request: VirtualTryOnRequest): Promise<{ task_id: string }> {
+    const path = '/v1/virtual-try-on';
+    
+    if (request.cloth_image_urls.length === 0) {
+      throw new Error('At least one clothing image URL is required');
+    }
+    
+    if (request.cloth_image_urls.length > 5) {
+      throw new Error('Maximum 5 clothing items allowed per request');
+    }
+    
+    const body = {
+      model_name: request.model_name || 'kolors-virtual-try-on-v1.5',
+      person_image_url: request.person_image_url,
+      cloth_image_urls: request.cloth_image_urls,
+    };
+
+    try {
+      const response = await this.axiosInstance.post(path, body);
+      return response.data.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(`Kling API error: ${error.response?.data?.message || error.message}`);
+      }
+      throw error;
+    }
+  }
+
+  async getResourcePackages(): Promise<ResourcePackage[]> {
+    const path = '/v1/account/packages';
+
+    try {
+      const response = await this.axiosInstance.get(path);
+      return response.data.data.resource_packages || [];
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(`Kling API error: ${error.response?.data?.message || error.message}`);
+      }
+      throw error;
+    }
+  }
+
+  async getAccountBalance(): Promise<AccountBalance> {
+    const path = '/v1/account/balance';
+
+    try {
+      const response = await this.axiosInstance.get(path);
+      return response.data.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(`Kling API error: ${error.response?.data?.message || error.message}`);
+      }
+      throw error;
+    }
+  }
+
+  async listTasks(params?: TaskListParams): Promise<any> {
+    const path = '/v1/task/list';
+    
+    const queryParams = {
+      page: params?.page || 1,
+      page_size: params?.page_size || 10,
+      ...(params?.status && { status: params.status }),
+      ...(params?.start_time && { start_time: params.start_time }),
+      ...(params?.end_time && { end_time: params.end_time }),
+    };
+
+    try {
+      const response = await this.axiosInstance.get(path, { params: queryParams });
+      return response.data.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(`Kling API error: ${error.response?.data?.message || error.message}`);
+      }
+      throw error;
+    }
   }
 }

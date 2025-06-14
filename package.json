@@ -1,7 +1,7 @@
 {
   "name": "mcp-kling",
-  "version": "2.1.0",
-  "description": "🎬 The FIRST MCP server for Kling AI video generation! Generate stunning AI videos directly from Claude using text prompts or images.",
+  "version": "2.3.0",
+  "description": "🎬 The FIRST MCP server for Kling AI video generation! Generate, extend, lip-sync AI videos, virtual try-on, and manage your account directly from Claude.",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
@@ -22,6 +22,12 @@
     "ai-video",
     "text-to-video",
     "image-to-video",
+    "video-extension",
+    "lip-sync",
+    "lipsync",
+    "virtual-try-on",
+    "fashion-ai",
+    "clothing-try-on",
     "claude",
     "anthropic"
   ],
