@@ -13,6 +13,8 @@ dotenv.config();
 
 const KLING_ACCESS_KEY = process.env.KLING_ACCESS_KEY;
 const KLING_SECRET_KEY = process.env.KLING_SECRET_KEY;
+const KLING_DOWNLOAD_PATH = process.env.KLING_DOWNLOAD_PATH; // Optional custom download path
+const KLING_AUTO_DOWNLOAD = process.env.KLING_AUTO_DOWNLOAD !== 'false'; // Default true
 
 async function generateJWT(accessKey: string, secretKey: string): Promise<string> {
   const { SignJWT } = await import('jose');

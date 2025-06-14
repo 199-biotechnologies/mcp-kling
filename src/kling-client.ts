@@ -1,5 +1,9 @@
 import axios, { AxiosInstance } from 'axios';
 import * as jose from 'jose';
+import { promises as fs } from 'fs';
+import { createWriteStream } from 'fs';
+import path from 'path';
+import { homedir } from 'os';
 
 export interface VideoGenerationRequest {
   prompt: string;
@@ -116,5 +120,31 @@ export default class KlingClient {
       }
       throw error;
     }
+  }
+
+  async downloadVideo(videoUrl: string, downloadPath?: string): Promise<string> {
+    const defaultPath = path.join(homedir(), 'Desktop');
+    const downloadDir = downloadPath || defaultPath;
+    
+    // Create directory if it doesn't exist
+    await fs.mkdir(downloadDir, { recursive: true });
+    
+    // Generate filename from URL and timestamp
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `kling-video-${timestamp}.mp4`;
+    const filepath = path.join(downloadDir, filename);
+    
+    // Download the video
+    const response = await axios.get(videoUrl, {
+      responseType: 'stream',
+    });
+    
+    const writer = createWriteStream(filepath);
+    response.data.pipe(writer);
+    
+    return new Promise((resolve, reject) => {
+      writer.on('finish', () => resolve(filepath));
+      writer.on('error', reject);
+    });
   }
 }
