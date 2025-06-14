@@ -279,14 +279,19 @@ Never lose your creations - everything is saved locally with descriptive filenam
 ### Video Generation Options
 ```javascript
 {
-  model: "kling_v1.6",        // v1.0, v1.5, or v1.6
+  model: "kling-v2-master",   // v1, v1.5, v1.6, or v2-master
   duration: 10,               // 5 or 10 seconds
   aspect_ratio: "16:9",       // 16:9, 9:16, 1:1
   mode: "professional",       // standard or professional
   cfg_scale: 0.7,            // 0-1 (creativity vs accuracy)
-  camera_movement: "auto"     // static, zoom, pan, auto
+  camera_control: {           // Camera movement (V1 only)
+    type: "simple",           // Camera movement type
+    config: { zoom: 5 }       // Movement parameters
+  }
 }
 ```
+
+**Note**: Image URLs must be publicly accessible (HTTP/HTTPS). Local file URLs (file://) are not supported.
 
 ### Image Generation Options
 ```javascript

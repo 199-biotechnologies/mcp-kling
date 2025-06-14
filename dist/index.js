@@ -35,9 +35,9 @@ if (!KLING_ACCESS_KEY || !KLING_SECRET_KEY) {
     console.error('3. Copy both Access Key and Secret Key');
     process.exit(1);
 }
-// Generate JWT token on startup
-const jwt = await generateJWT(KLING_ACCESS_KEY, KLING_SECRET_KEY);
-const klingClient = new KlingClient(jwt);
+// Initialize Kling client with access key and secret key
+// JWT will be generated fresh for each request
+const klingClient = new KlingClient(KLING_ACCESS_KEY, KLING_SECRET_KEY);
 const server = new Server({
     name: 'mcp-kling',
     version: '1.0.0',

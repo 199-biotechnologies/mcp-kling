@@ -114,19 +114,41 @@ export interface TaskListParams {
 }
 
 export default class KlingClient {
-  private jwt: string;
+  private accessKey: string;
+  private secretKey: string;
   private axiosInstance: AxiosInstance;
 
-  constructor(jwt: string) {
-    this.jwt = jwt;
+  constructor(accessKey: string, secretKey: string) {
+    this.accessKey = accessKey;
+    this.secretKey = secretKey;
     this.axiosInstance = axios.create({
       baseURL: 'https://api-singapore.klingai.com',
       timeout: 30000,
       headers: {
-        'Authorization': `Bearer ${jwt}`,
         'Content-Type': 'application/json',
       }
     });
+    
+    // Add request interceptor to generate fresh JWT for each request
+    this.axiosInstance.interceptors.request.use(async (config) => {
+      const jwt = await this.generateJWT();
+      config.headers['Authorization'] = `Bearer ${jwt}`;
+      return config;
+    });
+  }
+  
+  private async generateJWT(): Promise<string> {
+    const secret = new TextEncoder().encode(this.secretKey);
+    
+    const jwt = await new jose.SignJWT({ 
+      iss: this.accessKey,
+      exp: Math.floor(Date.now() / 1000) + (30 * 60), // 30 minutes
+      nbf: Math.floor(Date.now() / 1000) - 5 // 5 seconds ago
+    })
+      .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
+      .sign(secret);
+    
+    return jwt;
   }
 
   async generateVideo(request: VideoGenerationRequest): Promise<{ task_id: string }> {
@@ -164,6 +186,11 @@ export default class KlingClient {
     
     if (!request.image_url) {
       throw new Error('image_url is required for image-to-video generation');
+    }
+    
+    // Check if it's a local file URL
+    if (request.image_url.startsWith('file://')) {
+      throw new Error('Local file URLs are not supported. Please use a publicly accessible HTTP/HTTPS URL for the image.');
     }
 
     const body: any = {

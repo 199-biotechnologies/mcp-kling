@@ -1,21 +1,40 @@
 import axios from 'axios';
+import * as jose from 'jose';
 import { promises as fs } from 'fs';
 import { createWriteStream } from 'fs';
 import path from 'path';
 import { homedir } from 'os';
 export default class KlingClient {
-    jwt;
+    accessKey;
+    secretKey;
     axiosInstance;
-    constructor(jwt) {
-        this.jwt = jwt;
+    constructor(accessKey, secretKey) {
+        this.accessKey = accessKey;
+        this.secretKey = secretKey;
         this.axiosInstance = axios.create({
             baseURL: 'https://api-singapore.klingai.com',
             timeout: 30000,
             headers: {
-                'Authorization': `Bearer ${jwt}`,
                 'Content-Type': 'application/json',
             }
         });
+        // Add request interceptor to generate fresh JWT for each request
+        this.axiosInstance.interceptors.request.use(async (config) => {
+            const jwt = await this.generateJWT();
+            config.headers['Authorization'] = `Bearer ${jwt}`;
+            return config;
+        });
+    }
+    async generateJWT() {
+        const secret = new TextEncoder().encode(this.secretKey);
+        const jwt = await new jose.SignJWT({
+            iss: this.accessKey,
+            exp: Math.floor(Date.now() / 1000) + (30 * 60), // 30 minutes
+            nbf: Math.floor(Date.now() / 1000) - 5 // 5 seconds ago
+        })
+            .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
+            .sign(secret);
+        return jwt;
     }
     async generateVideo(request) {
         const path = '/v1/videos/text2video';
@@ -49,6 +68,10 @@ export default class KlingClient {
         const path = '/v1/videos/image2video';
         if (!request.image_url) {
             throw new Error('image_url is required for image-to-video generation');
+        }
+        // Check if it's a local file URL
+        if (request.image_url.startsWith('file://')) {
+            throw new Error('Local file URLs are not supported. Please use a publicly accessible HTTP/HTTPS URL for the image.');
         }
         const body = {
             image: request.image_url, // API uses 'image' not 'image_url'
