@@ -115,11 +115,10 @@ export default class KlingClient {
   async generateVideo(request: VideoGenerationRequest): Promise<{ task_id: string }> {
     const path = '/v1/videos/text2video';
     
-    const body = {
-      model_name: request.model_name || 'kling-v1',
+    const body: any = {
       prompt: request.prompt,
       negative_prompt: request.negative_prompt || '',
-      cfg_scale: request.cfg_scale || 0.7,
+      cfg_scale: request.cfg_scale || 0.8,
       aspect_ratio: request.aspect_ratio || '16:9',
       duration: request.duration || '5',
       ...(request.image_url && { image_url: request.image_url }),
@@ -127,6 +126,11 @@ export default class KlingClient {
       ...(request.ref_image_url && { ref_image_url: request.ref_image_url }),
       ...(request.ref_image_weight && { ref_image_weight: request.ref_image_weight }),
     };
+    
+    // Only add model_name if explicitly specified and not v2
+    if (request.model_name && request.model_name !== 'kling-v2') {
+      body.model_name = request.model_name;
+    }
 
     try {
       const response = await this.axiosInstance.post(path, body);
@@ -146,15 +150,19 @@ export default class KlingClient {
       throw new Error('image_url is required for image-to-video generation');
     }
 
-    const body = {
-      model_name: request.model_name || 'kling-v1',
+    const body: any = {
       image: request.image_url, // API uses 'image' not 'image_url'
       prompt: request.prompt,
       negative_prompt: request.negative_prompt || '',
-      cfg_scale: request.cfg_scale || 0.7,
+      cfg_scale: request.cfg_scale || 0.8,
       duration: request.duration || '5',
       aspect_ratio: request.aspect_ratio || '16:9',
     };
+    
+    // Only add model_name if explicitly specified and not v2
+    if (request.model_name && request.model_name !== 'kling-v2') {
+      body.model_name = request.model_name;
+    }
 
     try {
       const response = await this.axiosInstance.post(path, body);
@@ -184,13 +192,17 @@ export default class KlingClient {
   async extendVideo(request: VideoExtensionRequest): Promise<{ task_id: string }> {
     const path = '/v1/video/extension';
     
-    const body = {
-      model_name: request.model_name || 'kling-v1',
+    const body: any = {
       task_id: request.task_id,
       prompt: request.prompt,
       duration: request.duration || '5',
       mode: request.mode || 'standard',
     };
+    
+    // Only add model_name if explicitly specified and not v2
+    if (request.model_name && request.model_name !== 'kling-v2') {
+      body.model_name = request.model_name;
+    }
 
     try {
       const response = await this.axiosInstance.post(path, body);
@@ -278,14 +290,18 @@ export default class KlingClient {
       throw new Error(`Effect "${request.effect_scene}" requires exactly 1 image`);
     }
     
-    const body = {
+    const body: any = {
       input: {
         image_urls: request.image_urls,
         effect_scene: request.effect_scene,
         duration: request.duration || '5',
-        model_name: request.model_name || 'kling-v1',
       }
     };
+    
+    // Only add model_name if explicitly specified and not v2
+    if (request.model_name && request.model_name !== 'kling-v2') {
+      body.input.model_name = request.model_name;
+    }
 
     try {
       const response = await this.axiosInstance.post(path, body);
@@ -301,8 +317,7 @@ export default class KlingClient {
   async generateImage(request: ImageGenerationRequest): Promise<{ task_id: string }> {
     const path = '/v1/images/generation';
     
-    const body = {
-      model_name: request.model_name || 'kling-v1',
+    const body: any = {
       prompt: request.prompt,
       negative_prompt: request.negative_prompt || '',
       aspect_ratio: request.aspect_ratio || '1:1',
@@ -310,6 +325,11 @@ export default class KlingClient {
       ...(request.ref_image_url && { ref_image_url: request.ref_image_url }),
       ...(request.ref_image_weight && { ref_image_weight: request.ref_image_weight }),
     };
+    
+    // Only add model_name if explicitly specified and not v2
+    if (request.model_name && request.model_name !== 'kling-v2') {
+      body.model_name = request.model_name;
+    }
 
     try {
       const response = await this.axiosInstance.post(path, body);
