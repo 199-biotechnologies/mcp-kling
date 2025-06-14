@@ -4,6 +4,7 @@ import { promises as fs } from 'fs';
 import { createWriteStream } from 'fs';
 import path from 'path';
 import { homedir } from 'os';
+import { uploadFromUrl } from './file-uploader.js';
 
 export interface CameraControlConfig {
   horizontal?: number;  // [-10, 10]
@@ -150,9 +151,28 @@ export default class KlingClient {
     
     return jwt;
   }
+  
+  private async processImageUrl(url: string | undefined): Promise<string | undefined> {
+    if (!url) return undefined;
+    
+    if (url.startsWith('file://') || !url.startsWith('http')) {
+      try {
+        const uploadedUrl = await uploadFromUrl(url);
+        console.log(`Uploaded file to: ${uploadedUrl}`);
+        return uploadedUrl;
+      } catch (uploadError) {
+        throw new Error(`Failed to upload file: ${uploadError instanceof Error ? uploadError.message : String(uploadError)}`);
+      }
+    }
+    
+    return url;
+  }
 
   async generateVideo(request: VideoGenerationRequest): Promise<{ task_id: string }> {
     const path = '/v1/videos/text2video';
+    
+    // Process any image URLs
+    const ref_image_url = await this.processImageUrl(request.ref_image_url);
     
     const body: any = {
       prompt: request.prompt,
@@ -163,7 +183,7 @@ export default class KlingClient {
       model_name: request.model_name || 'kling-v2-master', // V2-master is default
       ...(request.image_url && { image_url: request.image_url }),
       ...(request.image_tail_url && { image_tail_url: request.image_tail_url }),
-      ...(request.ref_image_url && { ref_image_url: request.ref_image_url }),
+      ...(ref_image_url && { ref_image_url }),
       ...(request.ref_image_weight && { ref_image_weight: request.ref_image_weight }),
       ...(request.camera_control && { camera_control: request.camera_control }),
       ...(request.callback_url && { callback_url: request.callback_url }),
@@ -188,13 +208,11 @@ export default class KlingClient {
       throw new Error('image_url is required for image-to-video generation');
     }
     
-    // Check if it's a local file URL
-    if (request.image_url.startsWith('file://')) {
-      throw new Error('Local file URLs are not supported. Please use a publicly accessible HTTP/HTTPS URL for the image.');
-    }
+    // Process the image URL
+    const imageUrl = await this.processImageUrl(request.image_url);
 
     const body: any = {
-      image: request.image_url, // API uses 'image' not 'image_url'
+      image: imageUrl, // API uses 'image' not 'image_url'
       prompt: request.prompt,
       negative_prompt: request.negative_prompt || '',
       cfg_scale: request.cfg_scale || 0.8,
@@ -253,8 +271,11 @@ export default class KlingClient {
   async createLipsync(request: LipsyncRequest): Promise<{ task_id: string }> {
     const path = '/v1/videos/lip-sync';
     
+    // Process video URL
+    const video_url = await this.processImageUrl(request.video_url);
+    
     const input: any = {
-      video_url: request.video_url,
+      video_url: video_url!,
     };
 
     if (request.audio_url) {
@@ -325,9 +346,14 @@ export default class KlingClient {
       throw new Error(`Effect "${request.effect_scene}" requires exactly 1 image`);
     }
     
+    // Process all image URLs
+    const processedImageUrls = await Promise.all(
+      request.image_urls.map(url => this.processImageUrl(url))
+    );
+    
     const body: any = {
       input: {
-        image_urls: request.image_urls,
+        image_urls: processedImageUrls.filter(url => url !== undefined),
         effect_scene: request.effect_scene,
         duration: request.duration || '5',
       }
@@ -350,12 +376,15 @@ export default class KlingClient {
   async generateImage(request: ImageGenerationRequest): Promise<{ task_id: string }> {
     const path = '/v1/images/generation';
     
+    // Process reference image URL if provided
+    const ref_image_url = await this.processImageUrl(request.ref_image_url);
+    
     const body: any = {
       prompt: request.prompt,
       negative_prompt: request.negative_prompt || '',
       aspect_ratio: request.aspect_ratio || '1:1',
       num_images: request.num_images || 1,
-      ...(request.ref_image_url && { ref_image_url: request.ref_image_url }),
+      ...(ref_image_url && { ref_image_url }),
       ...(request.ref_image_weight && { ref_image_weight: request.ref_image_weight }),
     };
     
@@ -398,10 +427,16 @@ export default class KlingClient {
       throw new Error('Maximum 5 clothing items allowed per request');
     }
     
+    // Process all image URLs
+    const person_image_url = await this.processImageUrl(request.person_image_url);
+    const cloth_image_urls = await Promise.all(
+      request.cloth_image_urls.map(url => this.processImageUrl(url))
+    );
+    
     const body = {
       model_name: request.model_name || 'kolors-virtual-try-on-v1.5',
-      person_image_url: request.person_image_url,
-      cloth_image_urls: request.cloth_image_urls,
+      person_image_url: person_image_url!,
+      cloth_image_urls: cloth_image_urls.filter(url => url !== undefined),
     };
 
     try {

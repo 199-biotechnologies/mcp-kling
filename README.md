@@ -291,7 +291,22 @@ Never lose your creations - everything is saved locally with descriptive filenam
 }
 ```
 
-**Note**: Image URLs must be publicly accessible (HTTP/HTTPS). Local file URLs (file://) are not supported.
+### Local File Support
+
+**NEW in v5.2.0**: The MCP server now automatically handles local files! 
+
+- **Automatic Upload**: Local files and file:// URLs are automatically uploaded to cloud storage
+- **Seamless Integration**: Just provide local file paths - the server handles the rest
+- **Supported Formats**: Images (PNG, JPG, JPEG, GIF, WebP) and Videos (MP4, WebM, MOV)
+- **Zero Configuration**: Works out of the box with Supabase integration
+
+Examples:
+```javascript
+// All of these work automatically:
+image_url: "/Users/me/image.jpg"           // Local file path
+image_url: "file:///Users/me/image.jpg"    // File URL
+image_url: "https://example.com/image.jpg" // HTTP URL (used directly)
+```
 
 ### Image Generation Options
 ```javascript
