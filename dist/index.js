@@ -5,18 +5,20 @@ import { CallToolRequestSchema, ListToolsRequestSchema, } from '@modelcontextpro
 import KlingClient from './kling-client.js';
 import dotenv from 'dotenv';
 dotenv.config();
-const KLING_ACCESS_KEY = process.env.KLING_ACCESS_KEY;
-const KLING_SECRET_KEY = process.env.KLING_SECRET_KEY;
-if (!KLING_ACCESS_KEY || !KLING_SECRET_KEY) {
-    console.error('Error: KLING_ACCESS_KEY and KLING_SECRET_KEY environment variables are required.');
-    console.error('\nPlease add them to your Claude Desktop configuration:');
+const KLING_JWT = process.env.KLING_JWT;
+if (!KLING_JWT) {
+    console.error('Error: KLING_JWT environment variable is required.');
+    console.error('\nPlease add it to your Claude Desktop configuration:');
     console.error('"env": {');
-    console.error('  "KLING_ACCESS_KEY": "your_access_key",');
-    console.error('  "KLING_SECRET_KEY": "your_secret_key"');
+    console.error('  "KLING_JWT": "your_jwt_token"');
     console.error('}');
+    console.error('\nTo get your JWT token:');
+    console.error('1. Go to klingai.com and create an API key');
+    console.error('2. Click "JWT Verification" to generate your JWT token');
+    console.error('3. Copy the JWT token and add it to your config');
     process.exit(1);
 }
-const klingClient = new KlingClient(KLING_ACCESS_KEY, KLING_SECRET_KEY);
+const klingClient = new KlingClient(KLING_JWT);
 const server = new Server({
     name: 'mcp-kling',
     version: '1.0.0',

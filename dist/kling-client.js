@@ -1,36 +1,20 @@
 import axios from 'axios';
-import crypto from 'crypto';
 export default class KlingClient {
-    accessKey;
-    secretKey;
+    jwt;
     axiosInstance;
-    constructor(accessKey, secretKey) {
-        this.accessKey = accessKey;
-        this.secretKey = secretKey;
+    constructor(jwt) {
+        this.jwt = jwt;
         this.axiosInstance = axios.create({
             baseURL: 'https://api-singapore.klingai.com',
             timeout: 30000,
+            headers: {
+                'Authorization': `Bearer ${jwt}`,
+                'Content-Type': 'application/json',
+            }
         });
-    }
-    generateSignature(method, path, timestamp, body) {
-        const contentToSign = `${method}\n${path}\n${timestamp}\n${body ? JSON.stringify(body) : ''}`;
-        const hmac = crypto.createHmac('sha256', this.secretKey);
-        hmac.update(contentToSign);
-        return hmac.digest('base64');
-    }
-    getHeaders(method, path, body) {
-        const timestamp = new Date().toISOString();
-        const signature = this.generateSignature(method, path, timestamp, body);
-        return {
-            'X-Kling-Access-Key': this.accessKey,
-            'X-Kling-Signature': signature,
-            'X-Kling-Timestamp': timestamp,
-            'Content-Type': 'application/json',
-        };
     }
     async generateVideo(request) {
         const path = '/v1/videos/text2video';
-        const method = 'POST';
         const body = {
             model_name: request.model_name || 'kling-v1.6',
             prompt: request.prompt,
@@ -45,9 +29,7 @@ export default class KlingClient {
             ...(request.ref_image_weight && { ref_image_weight: request.ref_image_weight }),
         };
         try {
-            const response = await this.axiosInstance.post(path, body, {
-                headers: this.getHeaders(method, path, body),
-            });
+            const response = await this.axiosInstance.post(path, body);
             return response.data.data;
         }
         catch (error) {
@@ -59,7 +41,6 @@ export default class KlingClient {
     }
     async generateImageToVideo(request) {
         const path = '/v1/videos/image2video';
-        const method = 'POST';
         if (!request.image_url) {
             throw new Error('image_url is required for image-to-video generation');
         }
@@ -74,9 +55,7 @@ export default class KlingClient {
             duration: request.duration || '5',
         };
         try {
-            const response = await this.axiosInstance.post(path, body, {
-                headers: this.getHeaders(method, path, body),
-            });
+            const response = await this.axiosInstance.post(path, body);
             return response.data.data;
         }
         catch (error) {
@@ -88,11 +67,8 @@ export default class KlingClient {
     }
     async getTaskStatus(taskId) {
         const path = `/v1/videos/text2video/${taskId}`;
-        const method = 'GET';
         try {
-            const response = await this.axiosInstance.get(path, {
-                headers: this.getHeaders(method, path),
-            });
+            const response = await this.axiosInstance.get(path);
             return response.data.data;
         }
         catch (error) {
