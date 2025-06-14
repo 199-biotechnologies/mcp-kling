@@ -5,10 +5,24 @@ import { createWriteStream } from 'fs';
 import path from 'path';
 import { homedir } from 'os';
 
+export interface CameraControlConfig {
+  horizontal?: number;  // [-10, 10]
+  vertical?: number;    // [-10, 10]
+  pan?: number;         // [-10, 10]
+  tilt?: number;        // [-10, 10]
+  roll?: number;        // [-10, 10]
+  zoom?: number;        // [-10, 10]
+}
+
+export interface CameraControl {
+  type?: 'simple' | 'down_back' | 'forward_up' | 'right_turn_forward' | 'left_turn_forward';
+  config?: CameraControlConfig;
+}
+
 export interface VideoGenerationRequest {
   prompt: string;
   negative_prompt?: string;
-  model_name?: 'kling-v1' | 'kling-v1.5' | 'kling-v1.6' | 'kling-v2';
+  model_name?: 'kling-v1' | 'kling-v1.5' | 'kling-v1.6' | 'kling-v2-master';
   aspect_ratio?: '16:9' | '9:16' | '1:1';
   duration?: '5' | '10';
   mode?: 'standard' | 'professional';
@@ -17,6 +31,9 @@ export interface VideoGenerationRequest {
   image_tail_url?: string;
   ref_image_url?: string;
   ref_image_weight?: number;
+  camera_control?: CameraControl;
+  callback_url?: string;
+  external_task_id?: string;
 }
 
 export interface TaskStatus {
@@ -38,7 +55,7 @@ export interface TaskStatus {
 export interface VideoExtensionRequest {
   task_id: string;
   prompt: string;
-  model_name?: 'kling-v1' | 'kling-v1.5' | 'kling-v1.6' | 'kling-v2';
+  model_name?: 'kling-v1' | 'kling-v1.5' | 'kling-v1.6' | 'kling-v2-master';
   duration?: '5';
   mode?: 'standard' | 'professional';
 }
@@ -49,20 +66,20 @@ export interface LipsyncRequest {
   tts_text?: string;
   tts_voice?: string;
   tts_speed?: number;
-  model_name?: 'kling-v1' | 'kling-v1.5';
+  model_name?: 'kling-v1' | 'kling-v1.5' | 'kling-v1.6' | 'kling-v2-master';
 }
 
 export interface VideoEffectsRequest {
   image_urls: string[];
   effect_scene: 'hug' | 'kiss' | 'heart_gesture' | 'squish' | 'expansion' | 'fuzzyfuzzy' | 'bloombloom' | 'dizzydizzy';
   duration?: '5' | '10';
-  model_name?: 'kling-v1' | 'kling-v1.5' | 'kling-v1.6' | 'kling-v2';
+  model_name?: 'kling-v1' | 'kling-v1.5' | 'kling-v1.6' | 'kling-v2-master';
 }
 
 export interface ImageGenerationRequest {
   prompt: string;
   negative_prompt?: string;
-  model_name?: 'kling-v1' | 'kling-v1.5' | 'kling-v1.6' | 'kling-v2';
+  model_name?: 'kling-v1' | 'kling-v1.5' | 'kling-v1.6' | 'kling-v2-master';
   aspect_ratio?: '16:9' | '9:16' | '1:1' | '4:3' | '3:4' | '2:3' | '3:2';
   num_images?: number;
   ref_image_url?: string;
@@ -121,16 +138,15 @@ export default class KlingClient {
       cfg_scale: request.cfg_scale || 0.8,
       aspect_ratio: request.aspect_ratio || '16:9',
       duration: request.duration || '5',
+      model_name: request.model_name || 'kling-v2-master', // V2-master is default
       ...(request.image_url && { image_url: request.image_url }),
       ...(request.image_tail_url && { image_tail_url: request.image_tail_url }),
       ...(request.ref_image_url && { ref_image_url: request.ref_image_url }),
       ...(request.ref_image_weight && { ref_image_weight: request.ref_image_weight }),
+      ...(request.camera_control && { camera_control: request.camera_control }),
+      ...(request.callback_url && { callback_url: request.callback_url }),
+      ...(request.external_task_id && { external_task_id: request.external_task_id }),
     };
-    
-    // Only add model_name if explicitly specified and not v2
-    if (request.model_name && request.model_name !== 'kling-v2') {
-      body.model_name = request.model_name;
-    }
 
     try {
       const response = await this.axiosInstance.post(path, body);
@@ -157,12 +173,8 @@ export default class KlingClient {
       cfg_scale: request.cfg_scale || 0.8,
       duration: request.duration || '5',
       aspect_ratio: request.aspect_ratio || '16:9',
+      model_name: request.model_name || 'kling-v2-master', // V2-master is default
     };
-    
-    // Only add model_name if explicitly specified and not v2
-    if (request.model_name && request.model_name !== 'kling-v2') {
-      body.model_name = request.model_name;
-    }
 
     try {
       const response = await this.axiosInstance.post(path, body);
@@ -197,12 +209,8 @@ export default class KlingClient {
       prompt: request.prompt,
       duration: request.duration || '5',
       mode: request.mode || 'standard',
+      model_name: request.model_name || 'kling-v2-master', // V2-master is default
     };
-    
-    // Only add model_name if explicitly specified and not v2
-    if (request.model_name && request.model_name !== 'kling-v2') {
-      body.model_name = request.model_name;
-    }
 
     try {
       const response = await this.axiosInstance.post(path, body);
@@ -298,10 +306,8 @@ export default class KlingClient {
       }
     };
     
-    // Only add model_name if explicitly specified and not v2
-    if (request.model_name && request.model_name !== 'kling-v2') {
-      body.input.model_name = request.model_name;
-    }
+    // Always add model_name
+    body.input.model_name = request.model_name || 'kling-v2-master';
 
     try {
       const response = await this.axiosInstance.post(path, body);
@@ -326,10 +332,8 @@ export default class KlingClient {
       ...(request.ref_image_weight && { ref_image_weight: request.ref_image_weight }),
     };
     
-    // Only add model_name if explicitly specified and not v2
-    if (request.model_name && request.model_name !== 'kling-v2') {
-      body.model_name = request.model_name;
-    }
+    // Always add model_name
+    body.model_name = request.model_name || 'kling-v2-master';
 
     try {
       const response = await this.axiosInstance.post(path, body);

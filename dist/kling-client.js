@@ -25,15 +25,15 @@ export default class KlingClient {
             cfg_scale: request.cfg_scale || 0.8,
             aspect_ratio: request.aspect_ratio || '16:9',
             duration: request.duration || '5',
+            model_name: request.model_name || 'kling-v2-master', // V2-master is default
             ...(request.image_url && { image_url: request.image_url }),
             ...(request.image_tail_url && { image_tail_url: request.image_tail_url }),
             ...(request.ref_image_url && { ref_image_url: request.ref_image_url }),
             ...(request.ref_image_weight && { ref_image_weight: request.ref_image_weight }),
+            ...(request.camera_control && { camera_control: request.camera_control }),
+            ...(request.callback_url && { callback_url: request.callback_url }),
+            ...(request.external_task_id && { external_task_id: request.external_task_id }),
         };
-        // Only add model_name if explicitly specified and not v2
-        if (request.model_name && request.model_name !== 'kling-v2') {
-            body.model_name = request.model_name;
-        }
         try {
             const response = await this.axiosInstance.post(path, body);
             return response.data.data;
@@ -57,11 +57,8 @@ export default class KlingClient {
             cfg_scale: request.cfg_scale || 0.8,
             duration: request.duration || '5',
             aspect_ratio: request.aspect_ratio || '16:9',
+            model_name: request.model_name || 'kling-v2-master', // V2-master is default
         };
-        // Only add model_name if explicitly specified and not v2
-        if (request.model_name && request.model_name !== 'kling-v2') {
-            body.model_name = request.model_name;
-        }
         try {
             const response = await this.axiosInstance.post(path, body);
             return response.data.data;
@@ -93,11 +90,8 @@ export default class KlingClient {
             prompt: request.prompt,
             duration: request.duration || '5',
             mode: request.mode || 'standard',
+            model_name: request.model_name || 'kling-v2-master', // V2-master is default
         };
-        // Only add model_name if explicitly specified and not v2
-        if (request.model_name && request.model_name !== 'kling-v2') {
-            body.model_name = request.model_name;
-        }
         try {
             const response = await this.axiosInstance.post(path, body);
             return response.data.data;
@@ -179,10 +173,8 @@ export default class KlingClient {
                 duration: request.duration || '5',
             }
         };
-        // Only add model_name if explicitly specified and not v2
-        if (request.model_name && request.model_name !== 'kling-v2') {
-            body.input.model_name = request.model_name;
-        }
+        // Always add model_name
+        body.input.model_name = request.model_name || 'kling-v2-master';
         try {
             const response = await this.axiosInstance.post(path, body);
             return response.data.data;
@@ -204,10 +196,8 @@ export default class KlingClient {
             ...(request.ref_image_url && { ref_image_url: request.ref_image_url }),
             ...(request.ref_image_weight && { ref_image_weight: request.ref_image_weight }),
         };
-        // Only add model_name if explicitly specified and not v2
-        if (request.model_name && request.model_name !== 'kling-v2') {
-            body.model_name = request.model_name;
-        }
+        // Always add model_name
+        body.model_name = request.model_name || 'kling-v2-master';
         try {
             const response = await this.axiosInstance.post(path, body);
             return response.data.data;

@@ -63,8 +63,8 @@ const TOOLS = [
                 },
                 model_name: {
                     type: 'string',
-                    enum: ['kling-v1', 'kling-v1.5', 'kling-v1.6', 'kling-v2'],
-                    description: 'Model version to use (default: kling-v1.6)',
+                    enum: ['kling-v1', 'kling-v1.5', 'kling-v1.6', 'kling-v2-master'],
+                    description: 'Model version to use (default: kling-v2-master)',
                 },
                 aspect_ratio: {
                     type: 'string',
@@ -86,6 +86,59 @@ const TOOLS = [
                     description: 'Creative freedom scale 0-1 (0=more creative, 1=more adherent to prompt, default: 0.5)',
                     minimum: 0,
                     maximum: 1,
+                },
+                camera_control: {
+                    type: 'object',
+                    description: 'Camera movement settings for V2 models',
+                    properties: {
+                        type: {
+                            type: 'string',
+                            enum: ['simple', 'down_back', 'forward_up', 'right_turn_forward', 'left_turn_forward'],
+                            description: 'Camera movement type',
+                        },
+                        config: {
+                            type: 'object',
+                            description: 'Camera movement configuration (only for "simple" type)',
+                            properties: {
+                                horizontal: {
+                                    type: 'number',
+                                    description: 'Horizontal movement [-10, 10]',
+                                    minimum: -10,
+                                    maximum: 10,
+                                },
+                                vertical: {
+                                    type: 'number',
+                                    description: 'Vertical movement [-10, 10]',
+                                    minimum: -10,
+                                    maximum: 10,
+                                },
+                                pan: {
+                                    type: 'number',
+                                    description: 'Pan rotation [-10, 10]',
+                                    minimum: -10,
+                                    maximum: 10,
+                                },
+                                tilt: {
+                                    type: 'number',
+                                    description: 'Tilt rotation [-10, 10]',
+                                    minimum: -10,
+                                    maximum: 10,
+                                },
+                                roll: {
+                                    type: 'number',
+                                    description: 'Roll rotation [-10, 10]',
+                                    minimum: -10,
+                                    maximum: 10,
+                                },
+                                zoom: {
+                                    type: 'number',
+                                    description: 'Zoom [-10, 10]',
+                                    minimum: -10,
+                                    maximum: 10,
+                                },
+                            },
+                        },
+                    },
                 },
             },
             required: ['prompt'],
@@ -115,8 +168,8 @@ const TOOLS = [
                 },
                 model_name: {
                     type: 'string',
-                    enum: ['kling-v1.5', 'kling-v1.6', 'kling-v2'],
-                    description: 'Model version to use (default: kling-v1.5)',
+                    enum: ['kling-v1', 'kling-v1.5', 'kling-v1.6', 'kling-v2-master'],
+                    description: 'Model version to use (default: kling-v2-master)',
                 },
                 duration: {
                     type: 'string',
@@ -168,8 +221,8 @@ const TOOLS = [
                 },
                 model_name: {
                     type: 'string',
-                    enum: ['kling-v1', 'kling-v1.5', 'kling-v1.6', 'kling-v2'],
-                    description: 'Model version to use for extension (default: kling-v1)',
+                    enum: ['kling-v1', 'kling-v1.5', 'kling-v1.6', 'kling-v2-master'],
+                    description: 'Model version to use for extension (default: kling-v2-master)',
                 },
                 duration: {
                     type: 'string',
@@ -216,8 +269,8 @@ const TOOLS = [
                 },
                 model_name: {
                     type: 'string',
-                    enum: ['kling-v1', 'kling-v1.5'],
-                    description: 'Model version to use (default: kling-v1)',
+                    enum: ['kling-v1', 'kling-v1.5', 'kling-v1.6', 'kling-v2-master'],
+                    description: 'Model version to use (default: kling-v2-master)',
                 },
             },
             required: ['video_url'],
@@ -248,8 +301,8 @@ const TOOLS = [
                 },
                 model_name: {
                     type: 'string',
-                    enum: ['kling-v1', 'kling-v1.5', 'kling-v1.6', 'kling-v2'],
-                    description: 'Model version to use (default: kling-v1.6)',
+                    enum: ['kling-v1', 'kling-v1.5', 'kling-v1.6', 'kling-v2-master'],
+                    description: 'Model version to use (default: kling-v2-master)',
                 },
             },
             required: ['image_urls', 'effect_scene'],
@@ -271,8 +324,8 @@ const TOOLS = [
                 },
                 model_name: {
                     type: 'string',
-                    enum: ['kling-v1', 'kling-v1.5', 'kling-v2'],
-                    description: 'Model version to use (default: kling-v2)',
+                    enum: ['kling-v1', 'kling-v1.5', 'kling-v1.6', 'kling-v2-master'],
+                    description: 'Model version to use (default: kling-v2-master)',
                 },
                 aspect_ratio: {
                     type: 'string',
@@ -408,11 +461,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 const videoRequest = {
                     prompt: args.prompt,
                     negative_prompt: args.negative_prompt,
-                    model_name: args.model_name || 'kling-v2',
+                    model_name: args.model_name || 'kling-v2-master',
                     aspect_ratio: args.aspect_ratio || '16:9',
                     duration: args.duration || '5',
                     mode: args.mode || 'standard',
                     cfg_scale: args.cfg_scale ?? 0.5,
+                    camera_control: args.camera_control,
                 };
                 const result = await klingClient.generateVideo(videoRequest);
                 return {
@@ -428,7 +482,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 const videoRequest = {
                     prompt: args.prompt,
                     negative_prompt: args.negative_prompt,
-                    model_name: args.model_name || 'kling-v2',
+                    model_name: args.model_name || 'kling-v2-master',
                     duration: args.duration || '5',
                     mode: args.mode || 'standard',
                     cfg_scale: args.cfg_scale ?? 0.5,
@@ -474,7 +528,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 const extendRequest = {
                     task_id: args.task_id,
                     prompt: args.prompt,
-                    model_name: args.model_name || 'kling-v1',
+                    model_name: args.model_name || 'kling-v2-master',
                     duration: '5',
                     mode: args.mode || 'standard',
                 };
@@ -495,7 +549,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                     tts_text: args.tts_text,
                     tts_voice: args.tts_voice,
                     tts_speed: args.tts_speed ?? 1.0,
-                    model_name: args.model_name || 'kling-v1',
+                    model_name: args.model_name || 'kling-v2-master',
                 };
                 // Validate that either audio_url or tts_text is provided
                 if (!lipsyncRequest.audio_url && !lipsyncRequest.tts_text) {
@@ -516,7 +570,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                     image_urls: args.image_urls,
                     effect_scene: args.effect_scene,
                     duration: args.duration || '5',
-                    model_name: args.model_name || 'kling-v2',
+                    model_name: args.model_name || 'kling-v2-master',
                 };
                 const result = await klingClient.applyVideoEffect(effectRequest);
                 return {
@@ -532,7 +586,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 const imageRequest = {
                     prompt: args.prompt,
                     negative_prompt: args.negative_prompt,
-                    model_name: args.model_name || 'kling-v2',
+                    model_name: args.model_name || 'kling-v2-master',
                     aspect_ratio: args.aspect_ratio || '1:1',
                     num_images: args.num_images || 1,
                     ref_image_url: args.ref_image_url,
