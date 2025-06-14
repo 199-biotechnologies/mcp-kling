@@ -5,20 +5,37 @@ import { CallToolRequestSchema, ListToolsRequestSchema, } from '@modelcontextpro
 import KlingClient from './kling-client.js';
 import dotenv from 'dotenv';
 dotenv.config();
-const KLING_JWT = process.env.KLING_JWT;
-if (!KLING_JWT) {
-    console.error('Error: KLING_JWT environment variable is required.');
-    console.error('\nPlease add it to your Claude Desktop configuration:');
+const KLING_ACCESS_KEY = process.env.KLING_ACCESS_KEY;
+const KLING_SECRET_KEY = process.env.KLING_SECRET_KEY;
+async function generateJWT(accessKey, secretKey) {
+    const { SignJWT } = await import('jose');
+    const secret = new TextEncoder().encode(secretKey);
+    const currentTime = Math.floor(Date.now() / 1000);
+    const jwt = await new SignJWT({
+        iss: accessKey,
+        exp: currentTime + 1800, // 30 minutes from now
+        nbf: currentTime - 5, // Valid from 5 seconds ago
+    })
+        .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
+        .sign(secret);
+    return jwt;
+}
+if (!KLING_ACCESS_KEY || !KLING_SECRET_KEY) {
+    console.error('Error: KLING_ACCESS_KEY and KLING_SECRET_KEY environment variables are required.');
+    console.error('\nPlease add them to your Claude Desktop configuration:');
     console.error('"env": {');
-    console.error('  "KLING_JWT": "your_jwt_token"');
+    console.error('  "KLING_ACCESS_KEY": "your_access_key",');
+    console.error('  "KLING_SECRET_KEY": "your_secret_key"');
     console.error('}');
-    console.error('\nTo get your JWT token:');
-    console.error('1. Go to klingai.com and create an API key');
-    console.error('2. Click "JWT Verification" to generate your JWT token');
-    console.error('3. Copy the JWT token and add it to your config');
+    console.error('\nTo get your keys:');
+    console.error('1. Go to klingai.com developer console');
+    console.error('2. Create a new API key');
+    console.error('3. Copy both Access Key and Secret Key');
     process.exit(1);
 }
-const klingClient = new KlingClient(KLING_JWT);
+// Generate JWT token on startup
+const jwt = await generateJWT(KLING_ACCESS_KEY, KLING_SECRET_KEY);
+const klingClient = new KlingClient(jwt);
 const server = new Server({
     name: 'mcp-kling',
     version: '1.0.0',

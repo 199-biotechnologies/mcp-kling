@@ -20,44 +20,11 @@ Generate stunning AI videos directly from Claude using text prompts or transform
 
 It's incredibly easy to get started!
 
-### 1. Get your Kling API JWT Token
+### 1. Get your Kling API Credentials
 
 1. Go to [Kling AI Developer Console](https://app.klingai.com/global/dev/api-key)
-2. Click **"+ Create a new API Key"** to generate your Access Key and Secret Key
-3. Generate your JWT token:
-   - Option A: Use the **"JWT Verification"** button on Kling's website (if available)
-   - Option B: Generate it yourself using your Access Key and Secret Key (see below)
-
-#### Generating JWT Token Manually
-
-If the JWT Verification page has issues, you can generate your JWT token using Node.js:
-
-```javascript
-// save as generate-jwt.js
-import * as jose from 'jose';
-
-const ACCESS_KEY = 'your_access_key';
-const SECRET_KEY = 'your_secret_key';
-
-async function generateJWT() {
-  const secret = new TextEncoder().encode(SECRET_KEY);
-  
-  const jwt = await new jose.SignJWT({ 
-    iss: ACCESS_KEY,
-    exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24 * 30), // 30 days
-    iat: Math.floor(Date.now() / 1000)
-  })
-    .setProtectedHeader({ alg: 'HS256' })
-    .sign(secret);
-  
-  console.log('Your JWT Token:');
-  console.log(jwt);
-}
-
-generateJWT();
-```
-
-Run with: `npm install jose && node generate-jwt.js`
+2. Click **"+ Create a new API Key"**
+3. Save both your **Access Key** and **Secret Key**
 
 ### 2. Add to Claude Desktop
 
@@ -73,12 +40,15 @@ Add this configuration to your Claude Desktop config file:
       "command": "npx",
       "args": ["-y", "mcp-kling@latest"],
       "env": {
-        "KLING_JWT": "YOUR_JWT_TOKEN_HERE"
+        "KLING_ACCESS_KEY": "YOUR_ACCESS_KEY_HERE",
+        "KLING_SECRET_KEY": "YOUR_SECRET_KEY_HERE"
       }
     }
   }
 }
 ```
+
+The MCP server will automatically generate JWT tokens as needed using your credentials.
 
 That's it! Restart Claude Desktop and you're ready to generate amazing videos! 🎉
 
