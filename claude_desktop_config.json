@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "mcp-kling": {
+      "command": "node",
+      "args": ["/Users/biobook/Projects/mcp-kling/mcp-kling/dist/index.js"],
+      "env": {
+        "KLING_ACCESS_KEY": "YOUR_KLING_ACCESS_KEY_HERE",
+        "KLING_SECRET_KEY": "YOUR_KLING_SECRET_KEY_HERE"
+      }
+    }
+  }
+}

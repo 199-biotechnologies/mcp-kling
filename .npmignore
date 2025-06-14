@@ -1,0 +1,13 @@
+src/
+.env
+.env.*
+!.env.example
+tsconfig.json
+*.ts
+!dist/**/*.d.ts
+node_modules/
+.git/
+.gitignore
+claude_desktop_config.json
+*.log
+.DS_Store
