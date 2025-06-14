@@ -1,5 +1,5 @@
 {
-  "name": "@199-ai/mcp-kling",
+  "name": "mcp-kling",
   "version": "1.0.0",
   "description": "🎬 The FIRST MCP server for Kling AI video generation! Generate stunning AI videos directly from Claude using text prompts or images.",
   "main": "dist/index.js",

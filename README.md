@@ -1,6 +1,6 @@
 # 🎬 MCP Kling - The FIRST Kling AI Video Generation MCP Server!
 
-[![npm version](https://img.shields.io/npm/v/@199-ai/mcp-kling.svg)](https://www.npmjs.com/package/@199-ai/mcp-kling)
+[![npm version](https://img.shields.io/npm/v/mcp-kling.svg)](https://www.npmjs.com/package/mcp-kling)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 **The world's first MCP server for Kling AI video generation!** 🚀
@@ -36,7 +36,7 @@ Add this configuration to your Claude Desktop config file:
   "mcpServers": {
     "mcp-kling": {
       "command": "npx",
-      "args": ["@199-ai/mcp-kling"],
+      "args": ["mcp-kling"],
       "env": {
         "KLING_ACCESS_KEY": "YOUR_ACCESS_KEY_HERE",
         "KLING_SECRET_KEY": "YOUR_SECRET_KEY_HERE"
