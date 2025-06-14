@@ -36,7 +36,7 @@ Add this configuration to your Claude Desktop config file:
   "mcpServers": {
     "mcp-kling": {
       "command": "npx",
-      "args": ["mcp-kling"],
+      "args": ["-y", "mcp-kling@latest"],
       "env": {
         "KLING_ACCESS_KEY": "YOUR_ACCESS_KEY_HERE",
         "KLING_SECRET_KEY": "YOUR_SECRET_KEY_HERE"
