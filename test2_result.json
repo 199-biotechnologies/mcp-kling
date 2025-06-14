@@ -1,0 +1,7 @@
+{
+  "timestamp": "2025-06-14T08:13:14.793+0000",
+  "status": 404,
+  "error": "Not Found",
+  "message": "No message available",
+  "path": "/v1/image/generation"
+}

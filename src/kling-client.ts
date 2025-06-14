@@ -8,7 +8,7 @@ import { homedir } from 'os';
 export interface VideoGenerationRequest {
   prompt: string;
   negative_prompt?: string;
-  model_name?: 'kling-v1' | 'kling-v1.5' | 'kling-v1.6';
+  model_name?: 'kling-v1' | 'kling-v1.5' | 'kling-v1.6' | 'kling-v2';
   aspect_ratio?: '16:9' | '9:16' | '1:1';
   duration?: '5' | '10';
   mode?: 'standard' | 'professional';
@@ -38,7 +38,7 @@ export interface TaskStatus {
 export interface VideoExtensionRequest {
   task_id: string;
   prompt: string;
-  model_name?: 'kling-v1' | 'kling-v1.5' | 'kling-v1.6';
+  model_name?: 'kling-v1' | 'kling-v1.5' | 'kling-v1.6' | 'kling-v2';
   duration?: '5';
   mode?: 'standard' | 'professional';
 }
@@ -56,13 +56,13 @@ export interface VideoEffectsRequest {
   image_urls: string[];
   effect_scene: 'hug' | 'kiss' | 'heart_gesture' | 'squish' | 'expansion' | 'fuzzyfuzzy' | 'bloombloom' | 'dizzydizzy';
   duration?: '5' | '10';
-  model_name?: 'kling-v1' | 'kling-v1.5' | 'kling-v1.6';
+  model_name?: 'kling-v1' | 'kling-v1.5' | 'kling-v1.6' | 'kling-v2';
 }
 
 export interface ImageGenerationRequest {
   prompt: string;
   negative_prompt?: string;
-  model_name?: 'kling-v1' | 'kling-v1.5' | 'kling-v2';
+  model_name?: 'kling-v1' | 'kling-v1.5' | 'kling-v1.6' | 'kling-v2';
   aspect_ratio?: '16:9' | '9:16' | '1:1' | '4:3' | '3:4' | '2:3' | '3:2';
   num_images?: number;
   ref_image_url?: string;
@@ -116,11 +116,10 @@ export default class KlingClient {
     const path = '/v1/videos/text2video';
     
     const body = {
-      model_name: request.model_name || 'kling-v1.6',
+      model_name: request.model_name || 'kling-v1',
       prompt: request.prompt,
       negative_prompt: request.negative_prompt || '',
-      cfg_scale: request.cfg_scale || 0.5,
-      mode: request.mode || 'standard',
+      cfg_scale: request.cfg_scale || 0.7,
       aspect_ratio: request.aspect_ratio || '16:9',
       duration: request.duration || '5',
       ...(request.image_url && { image_url: request.image_url }),
@@ -148,14 +147,13 @@ export default class KlingClient {
     }
 
     const body = {
-      model_name: request.model_name || 'kling-v1.5',
-      image_url: request.image_url,
-      image_tail_url: request.image_tail_url,
+      model_name: request.model_name || 'kling-v1',
+      image: request.image_url, // API uses 'image' not 'image_url'
       prompt: request.prompt,
       negative_prompt: request.negative_prompt || '',
-      cfg_scale: request.cfg_scale || 0.5,
-      mode: request.mode || 'standard',
+      cfg_scale: request.cfg_scale || 0.7,
       duration: request.duration || '5',
+      aspect_ratio: request.aspect_ratio || '16:9',
     };
 
     try {
@@ -206,22 +204,27 @@ export default class KlingClient {
   }
 
   async createLipsync(request: LipsyncRequest): Promise<{ task_id: string }> {
-    const path = '/v1/video/lipsync';
+    const path = '/v1/videos/lip-sync';
     
-    const body: any = {
-      model_name: request.model_name || 'kling-v1',
+    const input: any = {
       video_url: request.video_url,
     };
 
     if (request.audio_url) {
-      body.audio_url = request.audio_url;
+      input.mode = 'audio2video';
+      input.audio_type = 'url';
+      input.audio_url = request.audio_url;
     } else if (request.tts_text) {
-      body.tts_text = request.tts_text;
-      body.tts_voice = request.tts_voice || 'male-warm';
-      body.tts_speed = request.tts_speed || 1.0;
+      input.mode = 'text2video';
+      input.text = request.tts_text;
+      input.voice_id = request.tts_voice || 'male-warm';
+      input.voice_language = 'en';
+      input.voice_speed = request.tts_speed || 1.0;
     } else {
       throw new Error('Either audio_url or tts_text must be provided');
     }
+
+    const body = { input };
 
     try {
       const response = await this.axiosInstance.post(path, body);
@@ -261,7 +264,7 @@ export default class KlingClient {
   }
 
   async applyVideoEffect(request: VideoEffectsRequest): Promise<{ task_id: string }> {
-    const path = '/v1/video/effects';
+    const path = '/v1/videos/effects';
     
     // Validate image count based on effect type
     const dualCharacterEffects = ['hug', 'kiss', 'heart_gesture'];
@@ -276,10 +279,12 @@ export default class KlingClient {
     }
     
     const body = {
-      model_name: request.model_name || 'kling-v1.6',
-      image_urls: request.image_urls,
-      effect_scene: request.effect_scene,
-      duration: request.duration || '5',
+      input: {
+        image_urls: request.image_urls,
+        effect_scene: request.effect_scene,
+        duration: request.duration || '5',
+        model_name: request.model_name || 'kling-v1',
+      }
     };
 
     try {
@@ -294,10 +299,10 @@ export default class KlingClient {
   }
 
   async generateImage(request: ImageGenerationRequest): Promise<{ task_id: string }> {
-    const path = '/v1/image/generation';
+    const path = '/v1/images/generation';
     
     const body = {
-      model_name: request.model_name || 'kling-v2',
+      model_name: request.model_name || 'kling-v1',
       prompt: request.prompt,
       negative_prompt: request.negative_prompt || '',
       aspect_ratio: request.aspect_ratio || '1:1',

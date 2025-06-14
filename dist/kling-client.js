@@ -20,11 +20,10 @@ export default class KlingClient {
     async generateVideo(request) {
         const path = '/v1/videos/text2video';
         const body = {
-            model_name: request.model_name || 'kling-v1.6',
+            model_name: request.model_name || 'kling-v1',
             prompt: request.prompt,
             negative_prompt: request.negative_prompt || '',
-            cfg_scale: request.cfg_scale || 0.5,
-            mode: request.mode || 'standard',
+            cfg_scale: request.cfg_scale || 0.7,
             aspect_ratio: request.aspect_ratio || '16:9',
             duration: request.duration || '5',
             ...(request.image_url && { image_url: request.image_url }),
@@ -49,14 +48,13 @@ export default class KlingClient {
             throw new Error('image_url is required for image-to-video generation');
         }
         const body = {
-            model_name: request.model_name || 'kling-v1.5',
-            image_url: request.image_url,
-            image_tail_url: request.image_tail_url,
+            model_name: request.model_name || 'kling-v1',
+            image: request.image_url, // API uses 'image' not 'image_url'
             prompt: request.prompt,
             negative_prompt: request.negative_prompt || '',
-            cfg_scale: request.cfg_scale || 0.5,
-            mode: request.mode || 'standard',
+            cfg_scale: request.cfg_scale || 0.7,
             duration: request.duration || '5',
+            aspect_ratio: request.aspect_ratio || '16:9',
         };
         try {
             const response = await this.axiosInstance.post(path, body);
@@ -103,22 +101,26 @@ export default class KlingClient {
         }
     }
     async createLipsync(request) {
-        const path = '/v1/video/lipsync';
-        const body = {
-            model_name: request.model_name || 'kling-v1',
+        const path = '/v1/videos/lip-sync';
+        const input = {
             video_url: request.video_url,
         };
         if (request.audio_url) {
-            body.audio_url = request.audio_url;
+            input.mode = 'audio2video';
+            input.audio_type = 'url';
+            input.audio_url = request.audio_url;
         }
         else if (request.tts_text) {
-            body.tts_text = request.tts_text;
-            body.tts_voice = request.tts_voice || 'male-warm';
-            body.tts_speed = request.tts_speed || 1.0;
+            input.mode = 'text2video';
+            input.text = request.tts_text;
+            input.voice_id = request.tts_voice || 'male-warm';
+            input.voice_language = 'en';
+            input.voice_speed = request.tts_speed || 1.0;
         }
         else {
             throw new Error('Either audio_url or tts_text must be provided');
         }
+        const body = { input };
         try {
             const response = await this.axiosInstance.post(path, body);
             return response.data.data;
@@ -151,7 +153,7 @@ export default class KlingClient {
         });
     }
     async applyVideoEffect(request) {
-        const path = '/v1/video/effects';
+        const path = '/v1/videos/effects';
         // Validate image count based on effect type
         const dualCharacterEffects = ['hug', 'kiss', 'heart_gesture'];
         const singleImageEffects = ['squish', 'expansion', 'fuzzyfuzzy', 'bloombloom', 'dizzydizzy'];
@@ -162,10 +164,12 @@ export default class KlingClient {
             throw new Error(`Effect "${request.effect_scene}" requires exactly 1 image`);
         }
         const body = {
-            model_name: request.model_name || 'kling-v1.6',
-            image_urls: request.image_urls,
-            effect_scene: request.effect_scene,
-            duration: request.duration || '5',
+            input: {
+                image_urls: request.image_urls,
+                effect_scene: request.effect_scene,
+                duration: request.duration || '5',
+                model_name: request.model_name || 'kling-v1',
+            }
         };
         try {
             const response = await this.axiosInstance.post(path, body);
@@ -179,9 +183,9 @@ export default class KlingClient {
         }
     }
     async generateImage(request) {
-        const path = '/v1/image/generation';
+        const path = '/v1/images/generation';
         const body = {
-            model_name: request.model_name || 'kling-v2',
+            model_name: request.model_name || 'kling-v1',
             prompt: request.prompt,
             negative_prompt: request.negative_prompt || '',
             aspect_ratio: request.aspect_ratio || '1:1',

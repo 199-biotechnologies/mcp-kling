@@ -63,7 +63,7 @@ const TOOLS = [
                 },
                 model_name: {
                     type: 'string',
-                    enum: ['kling-v1', 'kling-v1.5', 'kling-v1.6'],
+                    enum: ['kling-v1', 'kling-v1.5', 'kling-v1.6', 'kling-v2'],
                     description: 'Model version to use (default: kling-v1.6)',
                 },
                 aspect_ratio: {
@@ -115,7 +115,7 @@ const TOOLS = [
                 },
                 model_name: {
                     type: 'string',
-                    enum: ['kling-v1.5', 'kling-v1.6'],
+                    enum: ['kling-v1.5', 'kling-v1.6', 'kling-v2'],
                     description: 'Model version to use (default: kling-v1.5)',
                 },
                 duration: {
@@ -168,7 +168,7 @@ const TOOLS = [
                 },
                 model_name: {
                     type: 'string',
-                    enum: ['kling-v1', 'kling-v1.5', 'kling-v1.6'],
+                    enum: ['kling-v1', 'kling-v1.5', 'kling-v1.6', 'kling-v2'],
                     description: 'Model version to use for extension (default: kling-v1)',
                 },
                 duration: {
@@ -248,7 +248,7 @@ const TOOLS = [
                 },
                 model_name: {
                     type: 'string',
-                    enum: ['kling-v1', 'kling-v1.5', 'kling-v1.6'],
+                    enum: ['kling-v1', 'kling-v1.5', 'kling-v1.6', 'kling-v2'],
                     description: 'Model version to use (default: kling-v1.6)',
                 },
             },
@@ -408,7 +408,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 const videoRequest = {
                     prompt: args.prompt,
                     negative_prompt: args.negative_prompt,
-                    model_name: args.model_name || 'kling-v1.6',
+                    model_name: args.model_name || 'kling-v2',
                     aspect_ratio: args.aspect_ratio || '16:9',
                     duration: args.duration || '5',
                     mode: args.mode || 'standard',
@@ -428,7 +428,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 const videoRequest = {
                     prompt: args.prompt,
                     negative_prompt: args.negative_prompt,
-                    model_name: args.model_name || 'kling-v1.5',
+                    model_name: args.model_name || 'kling-v2',
                     duration: args.duration || '5',
                     mode: args.mode || 'standard',
                     cfg_scale: args.cfg_scale ?? 0.5,
@@ -516,7 +516,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                     image_urls: args.image_urls,
                     effect_scene: args.effect_scene,
                     duration: args.duration || '5',
-                    model_name: args.model_name || 'kling-v1.6',
+                    model_name: args.model_name || 'kling-v2',
                 };
                 const result = await klingClient.applyVideoEffect(effectRequest);
                 return {
