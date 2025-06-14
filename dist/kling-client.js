@@ -1,25 +1,20 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const axios_1 = __importDefault(require("axios"));
-const crypto_1 = __importDefault(require("crypto"));
-class KlingClient {
+import axios from 'axios';
+import crypto from 'crypto';
+export default class KlingClient {
     accessKey;
     secretKey;
     axiosInstance;
     constructor(accessKey, secretKey) {
         this.accessKey = accessKey;
         this.secretKey = secretKey;
-        this.axiosInstance = axios_1.default.create({
+        this.axiosInstance = axios.create({
             baseURL: 'https://api-singapore.klingai.com',
             timeout: 30000,
         });
     }
     generateSignature(method, path, timestamp, body) {
         const contentToSign = `${method}\n${path}\n${timestamp}\n${body ? JSON.stringify(body) : ''}`;
-        const hmac = crypto_1.default.createHmac('sha256', this.secretKey);
+        const hmac = crypto.createHmac('sha256', this.secretKey);
         hmac.update(contentToSign);
         return hmac.digest('base64');
     }
@@ -56,7 +51,7 @@ class KlingClient {
             return response.data.data;
         }
         catch (error) {
-            if (axios_1.default.isAxiosError(error)) {
+            if (axios.isAxiosError(error)) {
                 throw new Error(`Kling API error: ${error.response?.data?.message || error.message}`);
             }
             throw error;
@@ -85,7 +80,7 @@ class KlingClient {
             return response.data.data;
         }
         catch (error) {
-            if (axios_1.default.isAxiosError(error)) {
+            if (axios.isAxiosError(error)) {
                 throw new Error(`Kling API error: ${error.response?.data?.message || error.message}`);
             }
             throw error;
@@ -101,11 +96,10 @@ class KlingClient {
             return response.data.data;
         }
         catch (error) {
-            if (axios_1.default.isAxiosError(error)) {
+            if (axios.isAxiosError(error)) {
                 throw new Error(`Kling API error: ${error.response?.data?.message || error.message}`);
             }
             throw error;
         }
     }
 }
-exports.default = KlingClient;

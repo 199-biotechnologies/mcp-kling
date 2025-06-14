@@ -1,15 +1,10 @@
 #!/usr/bin/env node
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const index_js_1 = require("@modelcontextprotocol/sdk/server/index.js");
-const stdio_js_1 = require("@modelcontextprotocol/sdk/server/stdio.js");
-const types_js_1 = require("@modelcontextprotocol/sdk/types.js");
-const kling_client_js_1 = __importDefault(require("./kling-client.js"));
-const dotenv_1 = __importDefault(require("dotenv"));
-dotenv_1.default.config();
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { CallToolRequestSchema, ListToolsRequestSchema, } from '@modelcontextprotocol/sdk/types.js';
+import KlingClient from './kling-client.js';
+import dotenv from 'dotenv';
+dotenv.config();
 const KLING_ACCESS_KEY = process.env.KLING_ACCESS_KEY;
 const KLING_SECRET_KEY = process.env.KLING_SECRET_KEY;
 if (!KLING_ACCESS_KEY || !KLING_SECRET_KEY) {
@@ -21,8 +16,8 @@ if (!KLING_ACCESS_KEY || !KLING_SECRET_KEY) {
     console.error('}');
     process.exit(1);
 }
-const klingClient = new kling_client_js_1.default(KLING_ACCESS_KEY, KLING_SECRET_KEY);
-const server = new index_js_1.Server({
+const klingClient = new KlingClient(KLING_ACCESS_KEY, KLING_SECRET_KEY);
+const server = new Server({
     name: 'mcp-kling',
     version: '1.0.0',
 }, {
@@ -137,10 +132,10 @@ const TOOLS = [
         },
     },
 ];
-server.setRequestHandler(types_js_1.ListToolsRequestSchema, async () => ({
+server.setRequestHandler(ListToolsRequestSchema, async () => ({
     tools: TOOLS,
 }));
-server.setRequestHandler(types_js_1.CallToolRequestSchema, async (request) => {
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name, arguments: args } = request.params;
     if (!args) {
         throw new Error('No arguments provided');
@@ -230,7 +225,7 @@ server.setRequestHandler(types_js_1.CallToolRequestSchema, async (request) => {
     }
 });
 async function main() {
-    const transport = new stdio_js_1.StdioServerTransport();
+    const transport = new StdioServerTransport();
     await server.connect(transport);
     console.error('Kling MCP server running');
 }
